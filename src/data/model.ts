@@ -29,6 +29,8 @@
 //   2070: ~1.68B | 2075: ~1.65B (declining post-peak)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type Scenario = 'popular' | 'govt' | 'conservative';
+
 export interface GdpRow {
   year: number;
   realGDP: number;
@@ -87,14 +89,22 @@ function getPopulation(year: number): number {
 }
 
 // ─── Real GDP growth rates by era ───
-function getRealGrowthRate(year: number): number {
-  if (year <= 2024) return 0.072;
-  if (year <= 2027) return 0.075;
-  if (year <= 2035) return 0.070;
-  if (year <= 2045) return 0.060;
-  if (year <= 2055) return 0.050;
-  if (year <= 2065) return 0.040;
-  return 0.030;
+function getRealGrowthRate(year: number, scenario: Scenario): number {
+  let baseRate = 0;
+  if (year <= 2024) baseRate = 0.072;
+  else if (year <= 2027) baseRate = 0.075;
+  else if (year <= 2035) baseRate = 0.070;
+  else if (year <= 2045) baseRate = 0.060;
+  else if (year <= 2055) baseRate = 0.050;
+  else if (year <= 2065) baseRate = 0.040;
+  else baseRate = 0.030;
+
+  // Modifiers for projected years
+  if (year > 2026) {
+    if (scenario === 'govt') baseRate += 0.010; // Bull case
+    else if (scenario === 'conservative') baseRate -= 0.010; // Bear case
+  }
+  return baseRate;
 }
 
 // ─── Nominal USD uplift over domestic real (US CPI minus INR depreciation) ───
@@ -121,7 +131,7 @@ const ACTUALS: Record<number, { nom: number; realGrowth: number }> = {
 // Nominal GDP is the PRIMARY series (anchored to IMF/World Bank actuals through 2026,
 // then projected forward). Real GDP is DERIVED by deflating nominal with the US CPI
 // deflator, producing constant 2022 USD values where Real ≤ Nominal always holds.
-export const GDP_DATA: GdpRow[] = (() => {
+export function generateGdpData(scenario: Scenario): GdpRow[] {
   const rows: GdpRow[] = [];
   let nominalGDP = 3.35;
 
@@ -129,7 +139,7 @@ export const GDP_DATA: GdpRow[] = (() => {
     const year = 2022 + i;
     const pop = getPopulation(year);
     const isActual = year in ACTUALS;
-    const domesticRealGrowth = isActual ? ACTUALS[year].realGrowth : getRealGrowthRate(year);
+    const domesticRealGrowth = isActual ? ACTUALS[year].realGrowth : getRealGrowthRate(year, scenario);
     const nu = getNominalUplift(year);
 
     if (i > 0) {
@@ -160,7 +170,9 @@ export const GDP_DATA: GdpRow[] = (() => {
     });
   }
   return rows;
-})();
+}
+
+export const GDP_DATA: GdpRow[] = generateGdpData('popular');
 
 // ─── Constants ───
 export const MILESTONES: Milestone[] = [

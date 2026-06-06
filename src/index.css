@@ -350,6 +350,46 @@ body {
   margin-bottom: 4px;
 }
 
+.chart-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.scenario-toggle-group {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.scenario-toggle-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  transition: all var(--transition-fast);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.scenario-toggle-btn:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.scenario-toggle-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
 .chart-toggle-group {
   display: flex;
   gap: 6px;

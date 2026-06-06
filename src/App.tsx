@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  GDP_DATA,
   MILESTONES,
   ASSUMPTIONS,
   FEATURES,
   PALETTE,
   TABS,
   GROWTH_PHASES,
+  generateGdpData,
   type TabId,
+  type Scenario,
 } from './data/model';
 import { useAnimVal } from './hooks/useAnimVal';
 import GdpChart from './components/GdpChart';
@@ -17,11 +18,14 @@ import './index.css';
 
 function App() {
   const [showNominal, setShowNominal] = useState(false);
+  const [scenario, setScenario] = useState<Scenario>('popular');
   const [scrubYear, setScrubYear] = useState(2035);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [started, setStarted] = useState(false);
   const [cardsVisible, setCardsVisible] = useState(false);
   const [tableYear, setTableYear] = useState(2022);
+
+  const activeData = useMemo(() => generateGdpData(scenario), [scenario]);
 
   useEffect(() => {
     const a = setTimeout(() => setStarted(true), 300);
@@ -32,14 +36,14 @@ function App() {
     };
   }, []);
 
-  const real2075 = GDP_DATA[53].realGDP;
-  const nom2075 = GDP_DATA[53].nominalGDP;
+  const real2075 = activeData[53].realGDP;
+  const nom2075 = activeData[53].nominalGDP;
   const animReal = useAnimVal(real2075, 2000, started);
   const animNom = useAnimVal(nom2075, 2000, started);
 
-  const scrubD = GDP_DATA.find((d) => d.year === scrubYear) || GDP_DATA[0];
-  const tableStart = GDP_DATA.findIndex((d) => d.year === tableYear);
-  const tableData = GDP_DATA.slice(
+  const scrubD = activeData.find((d) => d.year === scrubYear) || activeData[0];
+  const tableStart = activeData.findIndex((d) => d.year === tableYear);
+  const tableData = activeData.slice(
     Math.max(0, tableStart),
     Math.max(0, tableStart) + 12
   );
@@ -71,7 +75,7 @@ function App() {
     },
     {
       label: 'Per-Capita 2075',
-      value: `~$${Math.round(GDP_DATA[53].perCapita / 1000)}K`,
+      value: `~$${Math.round(activeData[53].perCapita / 1000)}K`,
       sub: 'nominal · ~1.65B people',
       color: 'purple' as const,
       hex: PALETTE.purple,
@@ -138,7 +142,7 @@ function App() {
     },
   ];
 
-  const popData = GDP_DATA.filter((_, i) => i % 5 === 0).map((d) => d.pop);
+  const popData = activeData.filter((_, i) => i % 5 === 0).map((d) => d.pop);
   const popCheckpoints: [string, string][] = [
     ['2022', '1,417M'],
     ['2024', '1,441M'],
@@ -241,23 +245,36 @@ function App() {
                     Hover to explore — actual data left of dashed line
                   </div>
                 </div>
-                <div className="chart-toggle-group">
-                  <button
-                    className={`chart-toggle-btn ${!showNominal ? 'active-teal' : ''}`}
-                    onClick={() => setShowNominal(false)}
-                  >
-                    Real USD
-                  </button>
-                  <button
-                    className={`chart-toggle-btn ${showNominal ? 'active-gold' : ''}`}
-                    onClick={() => setShowNominal(true)}
-                  >
-                    + Nominal
-                  </button>
+                <div className="chart-controls">
+                  <div className="scenario-toggle-group">
+                    {(['conservative', 'popular', 'govt'] as const).map(s => (
+                      <button
+                        key={s}
+                        className={`scenario-toggle-btn ${scenario === s ? 'active' : ''}`}
+                        onClick={() => setScenario(s)}
+                      >
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="chart-toggle-group">
+                    <button
+                      className={`chart-toggle-btn ${!showNominal ? 'active-teal' : ''}`}
+                      onClick={() => setShowNominal(false)}
+                    >
+                      Real USD
+                    </button>
+                    <button
+                      className={`chart-toggle-btn ${showNominal ? 'active-gold' : ''}`}
+                      onClick={() => setShowNominal(true)}
+                    >
+                      + Nominal
+                    </button>
+                  </div>
                 </div>
               </div>
               <GdpChart
-                data={GDP_DATA}
+                data={activeData}
                 showNominal={showNominal}
                 scrubYear={scrubYear}
                 setScrubYear={setScrubYear}
@@ -317,7 +334,7 @@ function App() {
               </div>
               <div className="milestone-grid">
                 {MILESTONES.map((m, i) => {
-                  const d = GDP_DATA.find((dd) => dd.year === m.year);
+                  const d = activeData.find((dd) => dd.year === m.year);
                   return (
                     <div key={i} className="milestone-card">
                       <span className="milestone-icon">{m.icon}</span>
@@ -346,7 +363,7 @@ function App() {
           <div className={`tab-content ${cardsVisible ? 'visible' : ''}`}>
             <div className="sparkline-grid">
               {sparklineConfigs.map((c, i) => {
-                const sampled = GDP_DATA.filter((_, j) => j % 5 === 0).map(
+                const sampled = activeData.filter((_, j) => j % 5 === 0).map(
                   (d) => d[c.key]
                 );
                 return (
