@@ -8,7 +8,7 @@
 //   2025: $4.13T (IMF WEO Oct 2025)
 //   2026: $4.15T (IMF WEO Apr 2026)
 //
-// REAL GDP growth (India FY real rate):
+// INDIA DOMESTIC REAL GDP GROWTH (FY real rate, INR constant prices):
 //   2022-2027: ~6.5–7.5% (IMF/RBI range)
 //   2028-2035: ~7.0% (demographic dividend peak, PLI, infrastructure)
 //   2036-2045: ~6.0%
@@ -16,8 +16,12 @@
 //   2056-2065: ~4.0%
 //   2066-2075: ~3.0%
 //
-// NOMINAL USD GDP = real USD growth + USD inflation (~2.5%) - INR depreciation drag
-//   Net nominal USD uplift over real: ~1.5%/yr
+// NOMINAL USD GDP (projections) = prev × (1 + domestic_real + nominal_uplift)
+//   nominal_uplift = US CPI (~2.5%) – INR depreciation (~1.5%) ≈ +1.2–2.0%
+//
+// REAL GDP (constant 2022 USD) = Nominal USD GDP / US GDP deflator
+//   US GDP deflator proxy: 2.5% annual CPI (Fed long-run target)
+//   This ensures Real ≤ Nominal for all years after the 2022 base year.
 //
 // POPULATION (UN WPP 2024, medium variant):
 //   2022: 1.417B | 2024: 1.441B | 2030: ~1.51B | 2040: ~1.59B
@@ -93,13 +97,16 @@ function getRealGrowthRate(year: number): number {
   return 0.030;
 }
 
-// ─── Nominal USD multiplier over real ───
+// ─── Nominal USD uplift over domestic real (US CPI minus INR depreciation) ───
 function getNominalUplift(year: number): number {
   if (year <= 2030) return 0.012;
   if (year <= 2050) return 0.015;
   if (year <= 2065) return 0.018;
   return 0.020;
 }
+
+// ─── US CPI deflator (Fed long-run target, used to derive constant 2022 USD) ───
+const US_CPI_ANNUAL = 0.025;
 
 // ─── Actual historical data ───
 const ACTUALS: Record<number, { nom: number; realGrowth: number }> = {
@@ -111,29 +118,31 @@ const ACTUALS: Record<number, { nom: number; realGrowth: number }> = {
 };
 
 // ─── Build full dataset ───
+// Nominal GDP is the PRIMARY series (anchored to IMF/World Bank actuals through 2026,
+// then projected forward). Real GDP is DERIVED by deflating nominal with the US CPI
+// deflator, producing constant 2022 USD values where Real ≤ Nominal always holds.
 export const GDP_DATA: GdpRow[] = (() => {
   const rows: GdpRow[] = [];
-  let realGDP = 3.35;
   let nominalGDP = 3.35;
 
   for (let i = 0; i < 54; i++) {
     const year = 2022 + i;
     const pop = getPopulation(year);
     const isActual = year in ACTUALS;
-    const rg = isActual ? ACTUALS[year].realGrowth : getRealGrowthRate(year);
+    const domesticRealGrowth = isActual ? ACTUALS[year].realGrowth : getRealGrowthRate(year);
     const nu = getNominalUplift(year);
 
     if (i > 0) {
-      realGDP = realGDP * (1 + rg);
       if (isActual) {
         nominalGDP = ACTUALS[year].nom;
       } else {
-        nominalGDP = nominalGDP * (1 + rg + nu);
+        nominalGDP = nominalGDP * (1 + domesticRealGrowth + nu);
       }
-    } else {
-      realGDP = 3.35;
-      nominalGDP = 3.35;
     }
+
+    // Real GDP = Nominal / accumulated US price deflator
+    const usDeflator = Math.pow(1 + US_CPI_ANNUAL, year - 2022);
+    const realGDP = nominalGDP / usDeflator;
 
     const perCapitaNom = (nominalGDP * 1e12) / pop;
     const perCapitaReal = (realGDP * 1e12) / pop;
@@ -144,7 +153,7 @@ export const GDP_DATA: GdpRow[] = (() => {
       nominalGDP: Math.round(nominalGDP * 100) / 100,
       perCapita: Math.round(perCapitaNom / 10) * 10,
       perCapitaReal: Math.round(perCapitaReal / 10) * 10,
-      yoyGrowth: Math.round(rg * 1000) / 10,
+      yoyGrowth: Math.round(domesticRealGrowth * 1000) / 10, // India domestic real growth
       nominalUplift: Math.round(nu * 1000) / 10,
       pop: Math.round(pop / 1e6),
       isActual,
@@ -155,11 +164,11 @@ export const GDP_DATA: GdpRow[] = (() => {
 
 // ─── Constants ───
 export const MILESTONES: Milestone[] = [
-  { year: 2027, label: "$5T Nominal GDP", icon: "🏛️" },
+  { year: 2027, label: "$5T GDP Target", icon: "🏛️" },
   { year: 2031, label: "$6T · World #4", icon: "🥉" },
-  { year: 2037, label: "$10T Real GDP", icon: "🌟" },
+  { year: 2038, label: "$10T Nominal GDP", icon: "🌟" },
   { year: 2047, label: "India@100 Vision", icon: "🇮🇳" },
-  { year: 2056, label: "$20T Real GDP", icon: "🚀" },
+  { year: 2065, label: "$20T Real GDP", icon: "🚀" },
   { year: 2075, label: "Projection End", icon: "🔭" },
 ];
 
@@ -216,9 +225,9 @@ export const TABS = [
 export type TabId = (typeof TABS)[number]["id"];
 
 export const GROWTH_PHASES: GrowthPhase[] = [
-  { phase: "Actual", years: "2022–2026", cagr: "6.5–8.2%", realEnd: "$4.6T", source: "IMF/World Bank", color: PALETTE.teal },
-  { phase: "Acceleration", years: "2027–2035", cagr: "~7.0%", realEnd: "$9.2T", source: "PLI + demographics", color: PALETTE.blue },
-  { phase: "Maturation", years: "2036–2045", cagr: "~6.0%", realEnd: "$16.5T", source: "Services/tech exports", color: PALETTE.purple },
-  { phase: "Normalization", years: "2046–2060", cagr: "~5.0%", realEnd: "$33.8T", source: "Capital deepening", color: PALETTE.gold },
-  { phase: "Steady State", years: "2061–2075", cagr: "~3–4%", realEnd: "$51.2T", source: "Innovation-led", color: PALETTE.coral },
+  { phase: "Actual", years: "2022–2026", cagr: "6.5–8.2%", realEnd: "$3.8T", source: "IMF/World Bank", color: PALETTE.teal },
+  { phase: "Acceleration", years: "2027–2035", cagr: "~7.0%", realEnd: "$6.2T", source: "PLI + demographics", color: PALETTE.blue },
+  { phase: "Maturation", years: "2036–2045", cagr: "~6.0%", realEnd: "$10.0T", source: "Services/tech exports", color: PALETTE.purple },
+  { phase: "Normalization", years: "2046–2060", cagr: "~5.0%", realEnd: "$17.5T", source: "Capital deepening", color: PALETTE.gold },
+  { phase: "Steady State", years: "2061–2075", cagr: "~3–4%", realEnd: "$26.0T", source: "Innovation-led", color: PALETTE.coral },
 ];
