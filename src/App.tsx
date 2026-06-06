@@ -10,6 +10,7 @@ import {
   type TabId,
   type Scenario,
 } from './data/model';
+import { type StateId, STATE_INFO, generateStateData, generateStateSpecificMilestones } from './data/stateModel';
 import { useAnimVal } from './hooks/useAnimVal';
 import GdpChart from './components/GdpChart';
 import MiniSparkline from './components/MiniSparkline';
@@ -24,9 +25,10 @@ function App() {
   const [started, setStarted] = useState(false);
   const [cardsVisible, setCardsVisible] = useState(false);
   const [tableFilterIndex, setTableFilterIndex] = useState(0);
+  const [activeState, setActiveState] = useState<StateId>('INDIA');
 
-  const activeData = useMemo(() => generateGdpData(scenario), [scenario]);
-  const activeMilestones = useMemo(() => generateMilestones(activeData), [activeData]);
+  const activeData = useMemo(() => generateStateData(activeState, scenario), [scenario, activeState]);
+  const activeMilestones = useMemo(() => generateStateSpecificMilestones(activeData, activeState), [activeData, activeState]);
   const activeAssumptions = useMemo(() => generateAssumptions(scenario), [scenario]);
   const activeGrowthPhases = useMemo(() => generateGrowthPhases(activeData, scenario), [activeData, scenario]);
 
@@ -62,8 +64,8 @@ function App() {
   const kpis = [
     {
       label: 'Nominal GDP 2026',
-      value: '$4.15T',
-      sub: 'IMF WEO Apr 2026 · Actual',
+      value: `$${activeData.find(d => d.year === 2026)?.nominalGDP.toFixed(2)}T`,
+      sub: activeState === 'INDIA' ? 'IMF WEO Apr 2026 · Actual' : `${STATE_INFO[activeState].name} · Apportioned`,
       color: 'teal' as const,
       hex: PALETTE.teal,
       badge: 'ACTUAL',
@@ -128,14 +130,14 @@ function App() {
       key: 'realGDP' as const,
       color: PALETTE.teal,
       fmt: (v: number) => `$${v.toFixed(2)}T`,
-      desc: "Inflation-adjusted. Measures true output growth. Base: $3.35T (2022 World Bank). Grows to ~$50T by 2075 in constant 2022 dollars.",
+      desc: `Inflation-adjusted. Measures true output growth. Base: $${activeData[0].realGDP.toFixed(2)}T (2022). Grows to ~$${activeData[53].realGDP.toFixed(1)}T by 2075 in constant 2022 dollars.`,
     },
     {
       title: 'Nominal GDP (current $T)',
       key: 'nominalGDP' as const,
       color: PALETTE.gold,
       fmt: (v: number) => `$${v.toFixed(2)}T`,
-      desc: "Current USD. Includes real growth + modest nominal uplift (+1.2–2%/yr net of INR depreciation vs USD). Actuals match IMF WEO 2022–2026.",
+      desc: "Current USD. Includes real growth + modest nominal uplift (+1.2–2%/yr net of INR depreciation vs USD).",
     },
     {
       title: 'Real GDP Growth Rate (%)',
@@ -184,7 +186,17 @@ function App() {
         <div className="navbar-inner">
           <div className="navbar-brand">
             <div className="navbar-logo">$</div>
-            <span className="navbar-title">India GDP 2022–2075</span>
+            <select 
+              value={activeState} 
+              onChange={(e) => setActiveState(e.target.value as StateId)}
+              style={{ background: 'transparent', color: '#fff', border: 'none', fontSize: '15px', fontWeight: 600, outline: 'none', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em' }}
+            >
+              {Object.entries(STATE_INFO).map(([id, info]) => (
+                <option key={id} value={id} style={{ background: '#0A0C10', color: '#fff' }}>
+                  {info.name} GDP 2022–2075
+                </option>
+              ))}
+            </select>
             <span className="navbar-badge">IMF · WORLD BANK · UN WPP 2024</span>
           </div>
           <div className="navbar-tabs">
@@ -246,7 +258,7 @@ function App() {
               <div className="chart-header">
                 <div>
                   <div className="chart-subtitle">
-                    GDP Trajectory · USD Trillions · 2022–2075
+                    {STATE_INFO[activeState].name} GDP Trajectory · USD Trillions · 2022–2075
                   </div>
                   <div className="chart-title">
                     Hover to explore — actual data left of dashed line
@@ -285,6 +297,7 @@ function App() {
                 showNominal={showNominal}
                 scrubYear={scrubYear}
                 setScrubYear={setScrubYear}
+                activeState={activeState}
               />
               <div className="chart-legend">
                 <div className="legend-item">

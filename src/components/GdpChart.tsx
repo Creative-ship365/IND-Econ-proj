@@ -1,12 +1,14 @@
 import React, { useRef, useState } from 'react';
 import type { GdpRow, Milestone } from '../data/model';
-import { PALETTE, generateMilestones } from '../data/model';
+import { PALETTE } from '../data/model';
+import { type StateId, generateStateSpecificMilestones } from '../data/stateModel';
 
 interface GdpChartProps {
   data: GdpRow[];
   showNominal: boolean;
   scrubYear: number;
   setScrubYear: (year: number) => void;
+  activeState: StateId;
 }
 
 const PHASES = [
@@ -22,6 +24,7 @@ const GdpChart: React.FC<GdpChartProps> = ({
   showNominal,
   scrubYear,
   setScrubYear,
+  activeState,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -54,8 +57,15 @@ const GdpChart: React.FC<GdpChartProps> = ({
 
   const sd = data.find((d) => d.year === scrubYear) || data[0];
   const sx = xs(scrubYear);
-  const yTicks = [0, 5, 10, 15, 20, 30, 40, 50].filter((v) => v <= maxY);
-  const milestones = generateMilestones(data);
+  
+  let yTicks: number[] = [];
+  if (maxY <= 2) yTicks = [0, 0.5, 1, 1.5, 2];
+  else if (maxY <= 5) yTicks = [0, 1, 2, 3, 4, 5];
+  else if (maxY <= 10) yTicks = [0, 2, 4, 6, 8, 10];
+  else if (maxY <= 20) yTicks = [0, 5, 10, 15, 20];
+  else yTicks = [0, 10, 20, 30, 40, 50, 60].filter((v) => v <= maxY);
+  
+  const milestones = generateStateSpecificMilestones(data, activeState);
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const r = svgRef.current?.getBoundingClientRect();
