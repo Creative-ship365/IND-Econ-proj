@@ -203,10 +203,13 @@ function App() {
           <div className="hero-tag">
             India Economic Projection · Design Brief v2.1
           </div>
-          <h1>India's Economic Projection Portal</h1>
+          <h1>
+            Track Every <em>Rupee</em>.<br />
+            Every <em>Metric</em>.<br />
+            Every <em>Milestone</em>.
+          </h1>
           <p className="hero-sub">
-            All values in USD · Real (constant 2022 $) & Nominal (current $) ·
-            Anchored to World Bank & IMF actuals
+            Real-time visibility into India's economic trajectory. Real (constant 2022 $) & Nominal (current $) values — anchored to World Bank & IMF actuals.
           </p>
         </div>
 
