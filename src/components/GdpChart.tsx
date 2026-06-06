@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { GdpRow, Milestone } from '../data/model';
 import { PALETTE, MILESTONES } from '../data/model';
 
@@ -24,6 +24,7 @@ const GdpChart: React.FC<GdpChartProps> = ({
   setScrubYear,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
   const W = 700,
     H = 310,
     PL = 60,
@@ -94,6 +95,8 @@ const GdpChart: React.FC<GdpChartProps> = ({
       width="100%"
       style={{ cursor: 'crosshair', userSelect: 'none', display: 'block' }}
       onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <defs>
         <linearGradient id="rg2" x1="0" y1="0" x2="0" y2="1">
@@ -270,73 +273,77 @@ const GdpChart: React.FC<GdpChartProps> = ({
             );
           })}
 
-          {/* Scrub line */}
-          <line
-            x1={sx}
-            y1={0}
-            x2={sx}
-            y2={cH}
-            stroke="rgba(255,255,255,0.5)"
-            strokeWidth="1"
-          />
-          <circle
-            cx={sx}
-            cy={ys(sd.realGDP)}
-            r="5"
-            fill={PALETTE.teal}
-            stroke="#0A0C10"
-            strokeWidth="2"
-          />
-          {showNominal && (
-            <circle
-              cx={sx}
-              cy={ys(sd.nominalGDP)}
-              r="4"
-              fill={PALETTE.gold}
-              stroke="#0A0C10"
-              strokeWidth="2"
-            />
-          )}
+          {/* Scrub line and HUD */}
+          {isHovered && (
+            <>
+              <line
+                x1={sx}
+                y1={0}
+                x2={sx}
+                y2={cH}
+                stroke="rgba(255,255,255,0.5)"
+                strokeWidth="1"
+              />
+              <circle
+                cx={sx}
+                cy={ys(sd.realGDP)}
+                r="5"
+                fill={PALETTE.teal}
+                stroke="#0A0C10"
+                strokeWidth="2"
+              />
+              {showNominal && (
+                <circle
+                  cx={sx}
+                  cy={ys(sd.nominalGDP)}
+                  r="4"
+                  fill={PALETTE.gold}
+                  stroke="#0A0C10"
+                  strokeWidth="2"
+                />
+              )}
 
-          {/* HUD tooltip */}
-          <rect
-            x={hudX}
-            y={hudY}
-            width={148}
-            height={76}
-            rx="6"
-            fill="rgba(8,10,18,0.94)"
-            stroke={
-              sd.isActual
-                ? 'rgba(0,212,170,0.4)'
-                : 'rgba(74,158,255,0.3)'
-            }
-            strokeWidth="0.6"
-          />
-          {sd.isActual && (
-            <text
-              x={hudX + 9}
-              y={hudY + 12}
-              fill={PALETTE.teal}
-              fontSize="7"
-              fontFamily="'JetBrains Mono', monospace"
-            >
-              ● IMF/WORLD BANK DATA
-            </text>
+              {/* HUD tooltip */}
+              <rect
+                x={hudX}
+                y={hudY}
+                width={148}
+                height={76}
+                rx="6"
+                fill="rgba(8,10,18,0.94)"
+                stroke={
+                  sd.isActual
+                    ? 'rgba(0,212,170,0.4)'
+                    : 'rgba(74,158,255,0.3)'
+                }
+                strokeWidth="0.6"
+              />
+              {sd.isActual && (
+                <text
+                  x={hudX + 9}
+                  y={hudY + 12}
+                  fill={PALETTE.teal}
+                  fontSize="7"
+                  fontFamily="'JetBrains Mono', monospace"
+                >
+                  ● IMF/WORLD BANK DATA
+                </text>
+              )}
+              {hudLines.map((l, i) => (
+                <text
+                  key={i}
+                  x={hudX + 9}
+                  y={hudY + (sd.isActual ? 24 : 16) + i * 12}
+                  fill={l.color}
+                  fontSize={l.bold ? '11.5' : '9.5'}
+                  fontFamily="'JetBrains Mono', monospace"
+                  fontWeight={l.bold ? '700' : '400'}
+                >
+                  {l.text}
+                </text>
+              ))}
+            </>
           )}
-          {hudLines.map((l, i) => (
-            <text
-              key={i}
-              x={hudX + 9}
-              y={hudY + (sd.isActual ? 24 : 16) + i * 12}
-              fill={l.color}
-              fontSize={l.bold ? '11.5' : '9.5'}
-              fontFamily="'JetBrains Mono', monospace"
-              fontWeight={l.bold ? '700' : '400'}
-            >
-              {l.text}
-            </text>
-          ))}
         </g>
       </g>
     </svg>
