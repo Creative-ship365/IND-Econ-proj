@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  generateMilestones,
   generateAssumptions,
   FEATURES,
   PALETTE,
   TABS,
   generateGrowthPhases,
-  generateGdpData,
   type TabId,
   type Scenario,
 } from './data/model';
