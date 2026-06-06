@@ -189,21 +189,24 @@ export function generateMilestones(data: GdpRow[]): Milestone[] {
   ];
 }
 
-export const ASSUMPTIONS: Assumption[] = [
-  { label: "Real GDP growth 2022–27", value: "6.5–7.5% p.a.", source: "IMF WEO Apr 2026" },
-  { label: "Real GDP growth 2028–35", value: "~7.0% p.a.", source: "Demographic dividend + PLI" },
-  { label: "Real GDP growth 2036–45", value: "~6.0% p.a.", source: "Services maturation phase" },
-  { label: "Real GDP growth 2046–55", value: "~5.0% p.a.", source: "Normalization" },
-  { label: "Real GDP growth 2056–65", value: "~4.0% p.a.", source: "Capital deepening" },
-  { label: "Real GDP growth 2066–75", value: "~3.0% p.a.", source: "Steady-state convergence" },
-  { label: "Nominal USD uplift over real", value: "+1.2–2.0% p.a.", source: "US CPI minus INR drag" },
-  { label: "INR depreciation vs USD", value: "~1.5%/yr (declining)", source: "Historical trend, moderating" },
-  { label: "US CPI inflation", value: "~2.5% p.a.", source: "Fed long-run target" },
-  { label: "Base nominal GDP (2022)", value: "$3.35T", source: "World Bank confirmed" },
-  { label: "Population peak", value: "~1.701B, ~2060–62", source: "UN WPP 2024" },
-  { label: "TFR 2025", value: "~1.94 (below replacement)", source: "SRS 2024, UN WPP 2024" },
-  { label: "Population 2075 est.", value: "~1.65B (post-peak decline)", source: "UN WPP 2024 medium variant" },
-];
+export function generateAssumptions(scenario: Scenario): Assumption[] {
+  const mod = scenario === 'govt' ? 1.0 : scenario === 'conservative' ? -1.0 : 0.0;
+  return [
+    { label: "Real GDP growth 2022–27", value: "6.5–7.5% p.a.", source: "IMF WEO Apr 2026" },
+    { label: "Real GDP growth 2028–35", value: `~${(7.0 + mod).toFixed(1)}% p.a.`, source: "Demographic dividend + PLI" },
+    { label: "Real GDP growth 2036–45", value: `~${(6.0 + mod).toFixed(1)}% p.a.`, source: "Services maturation phase" },
+    { label: "Real GDP growth 2046–55", value: `~${(5.0 + mod).toFixed(1)}% p.a.`, source: "Normalization" },
+    { label: "Real GDP growth 2056–65", value: `~${(4.0 + mod).toFixed(1)}% p.a.`, source: "Capital deepening" },
+    { label: "Real GDP growth 2066–75", value: `~${(3.0 + mod).toFixed(1)}% p.a.`, source: "Steady-state convergence" },
+    { label: "Nominal USD uplift over real", value: "+1.2–2.0% p.a.", source: "US CPI minus INR drag" },
+    { label: "INR depreciation vs USD", value: "~1.5%/yr (declining)", source: "Historical trend, moderating" },
+    { label: "US CPI inflation", value: "~2.5% p.a.", source: "Fed long-run target" },
+    { label: "Base nominal GDP (2022)", value: "$3.35T", source: "World Bank confirmed" },
+    { label: "Population peak", value: "~1.701B, ~2060–62", source: "UN WPP 2024" },
+    { label: "TFR 2025", value: "~1.94 (below replacement)", source: "SRS 2024, UN WPP 2024" },
+    { label: "Population 2075 est.", value: "~1.65B (post-peak decline)", source: "UN WPP 2024 medium variant" },
+  ];
+}
 
 export const FEATURES: Feature[] = [
   { icon: "◉", title: "Obsidian Dark Interface", desc: "Deep #0A0C10 background layered with gradient glass cards — #1A1F2E at 85% opacity. Every surface breathes with subtle depth through multi-stop radial gradients and micro-shimmer borders. The palette draws from midnight blues, electric teals (#00D4AA), and burnished gold (#FFB547), creating a premium financial-grade aesthetic that commands trust.", tag: "Visual Identity" },
@@ -241,10 +244,15 @@ export const TABS = [
 
 export type TabId = (typeof TABS)[number]["id"];
 
-export const GROWTH_PHASES: GrowthPhase[] = [
-  { phase: "Actual", years: "2022–2026", cagr: "6.5–8.2%", realEnd: "$3.8T", source: "IMF/World Bank", color: PALETTE.teal },
-  { phase: "Acceleration", years: "2027–2035", cagr: "~7.0%", realEnd: "$6.2T", source: "PLI + demographics", color: PALETTE.blue },
-  { phase: "Maturation", years: "2036–2045", cagr: "~6.0%", realEnd: "$10.0T", source: "Services/tech exports", color: PALETTE.purple },
-  { phase: "Normalization", years: "2046–2060", cagr: "~5.0%", realEnd: "$17.5T", source: "Capital deepening", color: PALETTE.gold },
-  { phase: "Steady State", years: "2061–2075", cagr: "~3–4%", realEnd: "$26.0T", source: "Innovation-led", color: PALETTE.coral },
-];
+export function generateGrowthPhases(data: GdpRow[], scenario: Scenario): GrowthPhase[] {
+  const mod = scenario === 'govt' ? 1.0 : scenario === 'conservative' ? -1.0 : 0.0;
+  const getRealEnd = (year: number) => `$${data.find(d => d.year === year)?.realGDP.toFixed(1) || 0}T`;
+
+  return [
+    { phase: "Actual", years: "2022–2026", cagr: "6.5–8.2%", realEnd: getRealEnd(2026), source: "IMF/World Bank", color: PALETTE.teal },
+    { phase: "Acceleration", years: "2027–2035", cagr: `~${(7.0 + mod).toFixed(1)}%`, realEnd: getRealEnd(2035), source: "PLI + demographics", color: PALETTE.blue },
+    { phase: "Maturation", years: "2036–2045", cagr: `~${(6.0 + mod).toFixed(1)}%`, realEnd: getRealEnd(2045), source: "Services/tech exports", color: PALETTE.purple },
+    { phase: "Normalization", years: "2046–2060", cagr: `~${(5.0 + mod).toFixed(1)}%`, realEnd: getRealEnd(2060), source: "Capital deepening", color: PALETTE.gold },
+    { phase: "Steady State", years: "2061–2075", cagr: `~${(3.0 + mod).toFixed(1)}–${(4.0 + mod).toFixed(1)}%`, realEnd: getRealEnd(2075), source: "Innovation-led", color: PALETTE.coral },
+  ];
+}

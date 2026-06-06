@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   generateMilestones,
-  ASSUMPTIONS,
+  generateAssumptions,
   FEATURES,
   PALETTE,
   TABS,
-  GROWTH_PHASES,
+  generateGrowthPhases,
   generateGdpData,
   type TabId,
   type Scenario,
@@ -27,6 +27,8 @@ function App() {
 
   const activeData = useMemo(() => generateGdpData(scenario), [scenario]);
   const activeMilestones = useMemo(() => generateMilestones(activeData), [activeData]);
+  const activeAssumptions = useMemo(() => generateAssumptions(scenario), [scenario]);
+  const activeGrowthPhases = useMemo(() => generateGrowthPhases(activeData, scenario), [activeData, scenario]);
 
   useEffect(() => {
     const a = setTimeout(() => setStarted(true), 300);
@@ -398,7 +400,7 @@ function App() {
             <div className="card">
               <div className="card-label">Growth Phase Checkpoints</div>
               <div className="phase-grid">
-                {GROWTH_PHASES.map((ph, i) => (
+                {activeGrowthPhases.map((ph, i) => (
                   <div
                     key={i}
                     className="phase-card"
@@ -460,7 +462,7 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ASSUMPTIONS.map((a, i) => (
+                  {activeAssumptions.map((a, i) => (
                     <tr key={i}>
                       <td className="param">{a.label}</td>
                       <td className="val">{a.value}</td>
