@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import type { GdpRow, Milestone } from '../data/model';
-import { PALETTE, MILESTONES } from '../data/model';
+import { PALETTE, generateMilestones } from '../data/model';
 
 interface GdpChartProps {
   data: GdpRow[];
@@ -55,6 +55,7 @@ const GdpChart: React.FC<GdpChartProps> = ({
   const sd = data.find((d) => d.year === scrubYear) || data[0];
   const sx = xs(scrubYear);
   const yTicks = [0, 5, 10, 15, 20, 30, 40, 50].filter((v) => v <= maxY);
+  const milestones = generateMilestones(data);
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const r = svgRef.current?.getBoundingClientRect();
@@ -243,7 +244,7 @@ const GdpChart: React.FC<GdpChartProps> = ({
           )}
 
           {/* Milestone markers */}
-          {MILESTONES.map((m: Milestone) => {
+          {milestones.map((m: Milestone) => {
             if (
               m.year < data[0].year ||
               m.year > data[data.length - 1].year

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  MILESTONES,
+  generateMilestones,
   ASSUMPTIONS,
   FEATURES,
   PALETTE,
@@ -26,6 +26,7 @@ function App() {
   const [tableFilterIndex, setTableFilterIndex] = useState(0);
 
   const activeData = useMemo(() => generateGdpData(scenario), [scenario]);
+  const activeMilestones = useMemo(() => generateMilestones(activeData), [activeData]);
 
   useEffect(() => {
     const a = setTimeout(() => setStarted(true), 300);
@@ -337,7 +338,7 @@ function App() {
                 Key Milestones — Based on Model Projections
               </div>
               <div className="milestone-grid">
-                {MILESTONES.map((m, i) => {
+                {activeMilestones.map((m, i) => {
                   const d = activeData.find((dd) => dd.year === m.year);
                   return (
                     <div key={i} className="milestone-card">
@@ -572,7 +573,7 @@ function App() {
                   </thead>
                   <tbody>
                     {tableData.map((d, i) => {
-                      const isMilestone = MILESTONES.some(
+                      const isMilestone = activeMilestones.some(
                         (m) => m.year === d.year
                       );
                       return (

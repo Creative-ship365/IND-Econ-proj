@@ -175,14 +175,19 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
 export const GDP_DATA: GdpRow[] = generateGdpData('popular');
 
 // ─── Constants ───
-export const MILESTONES: Milestone[] = [
-  { year: 2027, label: "$5T GDP Target", icon: "🏛️" },
-  { year: 2031, label: "$6T · World #4", icon: "🥉" },
-  { year: 2038, label: "$10T Nominal GDP", icon: "🌟" },
-  { year: 2047, label: "India@100 Vision", icon: "🇮🇳" },
-  { year: 2065, label: "$20T Real GDP", icon: "🚀" },
-  { year: 2075, label: "Projection End", icon: "🔭" },
-];
+export function generateMilestones(data: GdpRow[]): Milestone[] {
+  const getYearForNominal = (target: number) => data.find(d => d.nominalGDP >= target)?.year || 2075;
+  const getYearForReal = (target: number) => data.find(d => d.realGDP >= target)?.year || 2075;
+
+  return [
+    { year: getYearForNominal(5.0), label: "$5T GDP Target", icon: "🏛️" },
+    { year: getYearForNominal(6.0), label: "$6T · World #4", icon: "🥉" },
+    { year: getYearForNominal(10.0), label: "$10T Nominal GDP", icon: "🌟" },
+    { year: 2047, label: "India@100 Vision", icon: "🇮🇳" },
+    { year: getYearForReal(20.0), label: "$20T Real GDP", icon: "🚀" },
+    { year: 2075, label: "Projection End", icon: "🔭" },
+  ];
+}
 
 export const ASSUMPTIONS: Assumption[] = [
   { label: "Real GDP growth 2022–27", value: "6.5–7.5% p.a.", source: "IMF WEO Apr 2026" },
