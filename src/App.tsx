@@ -23,7 +23,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [started, setStarted] = useState(false);
   const [cardsVisible, setCardsVisible] = useState(false);
-  const [tableYear, setTableYear] = useState(2022);
+  const [tableFilterIndex, setTableFilterIndex] = useState(0);
 
   const activeData = useMemo(() => generateGdpData(scenario), [scenario]);
 
@@ -42,10 +42,18 @@ function App() {
   const animNom = useAnimVal(nom2075, 2000, started);
 
   const scrubD = activeData.find((d) => d.year === scrubYear) || activeData[0];
-  const tableStart = activeData.findIndex((d) => d.year === tableYear);
-  const tableData = activeData.slice(
-    Math.max(0, tableStart),
-    Math.max(0, tableStart) + 12
+  const yearFilters = useMemo(() => [
+    { start: 2022, end: 2030, label: '2022–30' },
+    { start: 2031, end: 2040, label: '31–40' },
+    { start: 2041, end: 2050, label: '41–50' },
+    { start: 2051, end: 2060, label: '51–60' },
+    { start: 2061, end: 2070, label: '61–70' },
+    { start: 2071, end: 2075, label: '71–75' },
+  ], []);
+
+  const activeFilter = yearFilters[tableFilterIndex];
+  const tableData = activeData.filter(
+    (d) => d.year >= activeFilter.start && d.year <= activeFilter.end
   );
 
   const kpis = [
@@ -162,14 +170,7 @@ function App() {
     'Pop (M)',
   ];
 
-  const yearFilters = [
-    { y: 2022, label: '2022+' },
-    { y: 2027, label: '2027s' },
-    { y: 2035, label: '2035s' },
-    { y: 2045, label: '2045s' },
-    { y: 2055, label: '2055s' },
-    { y: 2065, label: '2065s' },
-  ];
+
 
   return (
     <div id="app-root">
@@ -549,11 +550,11 @@ function App() {
                   </div>
                 </div>
                 <div className="year-filter-group">
-                  {yearFilters.map((yf) => (
+                  {yearFilters.map((yf, idx) => (
                     <button
-                      key={yf.y}
-                      className={`year-filter-btn ${tableYear === yf.y ? 'active' : ''}`}
-                      onClick={() => setTableYear(yf.y)}
+                      key={yf.label}
+                      className={`year-filter-btn ${tableFilterIndex === idx ? 'active' : ''}`}
+                      onClick={() => setTableFilterIndex(idx)}
                     >
                       {yf.label}
                     </button>
