@@ -201,11 +201,27 @@ function App() {
               onChange={(e) => setActiveState(e.target.value as StateId)}
               style={{ background: 'transparent', color: '#fff', border: 'none', fontSize: '15px', fontWeight: 600, outline: 'none', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em' }}
             >
-              {Object.entries(STATE_INFO).map(([id, info]) => (
-                <option key={id} value={id} style={{ background: '#0A0C10', color: '#fff' }}>
-                  {info.name} GDP 2022–2075
-                </option>
-              ))}
+              <option value="INDIA" style={{ background: '#0A0C10', color: '#fff' }}>India (National) GDP 2022–2075</option>
+              <optgroup label="States" style={{ background: '#0A0C10', color: '#aaa', fontStyle: 'normal' }}>
+                {Object.entries(STATE_INFO)
+                  .filter(([id]) => id !== 'INDIA' && !['AN','CH','DN','DL','JK','LA','LD','PY'].includes(id))
+                  .sort((a,b) => a[1].name.localeCompare(b[1].name))
+                  .map(([id, info]) => (
+                    <option key={id} value={id} style={{ color: '#fff' }}>
+                      {info.name}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Union Territories" style={{ background: '#0A0C10', color: '#aaa', fontStyle: 'normal' }}>
+                {Object.entries(STATE_INFO)
+                  .filter(([id]) => ['AN','CH','DN','DL','JK','LA','LD','PY'].includes(id))
+                  .sort((a,b) => a[1].name.localeCompare(b[1].name))
+                  .map(([id, info]) => (
+                    <option key={id} value={id} style={{ color: '#fff' }}>
+                      {info.name}
+                    </option>
+                  ))}
+              </optgroup>
             </select>
             <span className="navbar-badge">IMF · WORLD BANK · UN WPP 2024</span>
           </div>
