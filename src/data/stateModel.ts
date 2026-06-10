@@ -45,42 +45,66 @@ export const STATE_INFO: Record<StateId, { name: string; popBase2022: number; po
   'PY': { name: 'Puducherry', popBase2022: 1.4, popPeakYear: 2040, popGrowthRate2022: 0.01, gdpShare2022: 0.001, growthModifier: 0 },
 };
 
-export function generateStateData(stateId: StateId, scenario: Scenario): GdpRow[] {
+export function generateStateData(targetStateId: StateId, scenario: Scenario): GdpRow[] {
   const nationalData = generateGdpData(scenario);
-  if (stateId === 'INDIA') return nationalData;
+  if (targetStateId === 'INDIA') return nationalData;
 
-  const state = STATE_INFO[stateId];
-  let pop = state.popBase2022 * 1e6;
-  let stateShare = state.gdpShare2022;
+  // We need to compute the raw population and raw GDP share for ALL states simultaneously
+  // to ensure their sum is perfectly normalized to the National aggregates.
+  const stateKeys = Object.keys(STATE_INFO).filter(k => k !== 'INDIA') as StateId[];
+  
+  // Initialize tracking for all states
+  const trackers = stateKeys.map(id => ({
+    id,
+    pop: STATE_INFO[id].popBase2022 * 1e6,
+    share: STATE_INFO[id].gdpShare2022
+  }));
 
   return nationalData.map(d => {
+    let totalRawPop = 0;
+    let totalRawShare = 0;
+
     if (d.year > 2022) {
-      // Smoothed demographic transition formula
-      if (d.year <= state.popPeakYear) {
-        // Linearly taper growth rate to 0 by peak year
-        const r = state.popGrowthRate2022 * (1 - (d.year - 2022) / (state.popPeakYear - 2022));
-        pop = pop * (1 + Math.max(0, r));
-      } else {
-        pop = pop * (1 - 0.003); // Post-peak decline
-      }
-
-      // Economic share dampening (convergence)
-      // Modifier dampens logarithmically over 30 years to approach 0
       const dampening = Math.exp(-(d.year - 2022) / 30);
-      const currentModifier = state.growthModifier * dampening;
-      stateShare = stateShare * (1 + currentModifier);
+      
+      trackers.forEach(t => {
+        const s = STATE_INFO[t.id];
+        // Advance population for each state
+        if (d.year <= s.popPeakYear) {
+          const r = s.popGrowthRate2022 * (1 - (d.year - 2022) / (s.popPeakYear - 2022));
+          t.pop = t.pop * (1 + Math.max(0, r));
+        } else {
+          t.pop = t.pop * (1 - 0.003); // Post-peak decline
+        }
+        
+        // Advance GDP share for each state
+        const currentModifier = s.growthModifier * dampening;
+        t.share = t.share * (1 + currentModifier);
+      });
     }
-    
-    const nominalGDP = d.nominalGDP * stateShare;
-    const realGDP = d.realGDP * stateShare;
-    const pppGDP = d.pppGDP * stateShare;
 
-    const perCapitaNom = (nominalGDP * 1e12) / pop;
-    const perCapitaReal = (realGDP * 1e12) / pop;
-    const perCapitaPPP = (pppGDP * 1e12) / pop;
+    trackers.forEach(t => {
+      totalRawPop += t.pop;
+      totalRawShare += t.share;
+    });
+
+    const targetTracker = trackers.find(t => t.id === targetStateId)!;
+    const targetState = STATE_INFO[targetStateId];
+    
+    // STRICT TOP-DOWN NORMALIZATION: Force states to sum exactly to the National aggregate
+    const normalizedPop = (targetTracker.pop / totalRawPop) * (d.pop * 1e6);
+    const normalizedShare = (targetTracker.share / totalRawShare);
+
+    const nominalGDP = d.nominalGDP * normalizedShare;
+    const realGDP = d.realGDP * normalizedShare;
+    const pppGDP = d.pppGDP * normalizedShare;
+
+    const perCapitaNom = (nominalGDP * 1e12) / normalizedPop;
+    const perCapitaReal = (realGDP * 1e12) / normalizedPop;
+    const perCapitaPPP = (pppGDP * 1e12) / normalizedPop;
 
     const dampeningDisplay = Math.exp(-(d.year - 2022) / 30);
-    const yoyGrowth = d.yoyGrowth + (state.growthModifier * 100 * dampeningDisplay);
+    const yoyGrowth = d.yoyGrowth + (targetState.growthModifier * 100 * dampeningDisplay);
 
     return {
       ...d,
@@ -90,7 +114,7 @@ export function generateStateData(stateId: StateId, scenario: Scenario): GdpRow[
       perCapita: Math.round(perCapitaNom / 10) * 10,
       perCapitaReal: Math.round(perCapitaReal / 10) * 10,
       perCapitaPPP: Math.round(perCapitaPPP / 10) * 10,
-      pop: Math.round(pop / 1e6),
+      pop: Math.round(normalizedPop / 1e6),
       yoyGrowth: Math.round(yoyGrowth * 10) / 10,
     };
   });
