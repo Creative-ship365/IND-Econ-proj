@@ -140,7 +140,6 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
   const rows: GdpRow[] = [];
   let nominalGDP = 3.35;
   let realGDP = 3.35;
-  let pppGDP = 11.9; // 2022 base PPP for India
 
   for (let i = 0; i < 54; i++) {
     const year = 2022 + i;
@@ -152,8 +151,6 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
     if (i > 0) {
       // Real GDP strictly tracks domestic volume growth, anchored to 2022
       realGDP = realGDP * (1 + domesticRealGrowth);
-      // PPP GDP grows by real growth plus US inflation
-      pppGDP = pppGDP * (1 + domesticRealGrowth + US_CPI_ANNUAL);
 
       if (isActual) {
         nominalGDP = ACTUALS[year].nom;
@@ -161,6 +158,14 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
         nominalGDP = nominalGDP * (1 + domesticRealGrowth + nu);
       }
     }
+
+    // PPP GDP Calculation (incorporating the Penn Effect)
+    // As India develops, domestic price levels converge with advanced economies.
+    // The PPP multiplier decays from ~3.55 in 2022 towards ~1.2 in 2075.
+    const usDeflator = Math.pow(1 + US_CPI_ANNUAL, year - 2022);
+    const pppMultiplier = 3.55 - ((year - 2022) / (2075 - 2022)) * (3.55 - 1.2);
+    // PPP GDP = (Real Volume * US Inflation) * PPP Multiplier
+    let pppGDP = realGDP * usDeflator * pppMultiplier;
 
     const perCapitaNom = (nominalGDP * 1e12) / pop;
     const perCapitaReal = (realGDP * 1e12) / pop;
