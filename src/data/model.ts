@@ -19,9 +19,10 @@
 // NOMINAL USD GDP (projections) = prev × (1 + domestic_real + nominal_uplift)
 //   nominal_uplift = US CPI (~2.5%) – INR depreciation (~1.5%) ≈ +1.2–2.0%
 //
-// REAL GDP (constant 2022 USD) = Nominal USD GDP / US GDP deflator
-//   US GDP deflator proxy: 2.5% annual CPI (Fed long-run target)
-//   This ensures Real ≤ Nominal for all years after the 2022 base year.
+// REAL GDP (constant 2022 volume) = 2022 Base GDP compounded by Domestic Real Growth
+//   This tracks the true physical volume of the economy, immune to exchange rate fluctuations.
+//   During periods of heavy INR depreciation (e.g., 2025-2026), Nominal USD may stagnate
+//   or drop below Real GDP, accurately reflecting the exchange rate drag.
 //
 // POPULATION (UN WPP 2024, medium variant):
 //   2022: 1.417B | 2024: 1.441B | 2030: ~1.51B | 2040: ~1.59B
@@ -115,8 +116,7 @@ function getNominalUplift(year: number): number {
   return 0.020;
 }
 
-// ─── US CPI deflator (Fed long-run target, used to derive constant 2022 USD) ───
-const US_CPI_ANNUAL = 0.025;
+
 
 // ─── Actual historical data ───
 const ACTUALS: Record<number, { nom: number; realGrowth: number }> = {
@@ -134,6 +134,7 @@ const ACTUALS: Record<number, { nom: number; realGrowth: number }> = {
 export function generateGdpData(scenario: Scenario): GdpRow[] {
   const rows: GdpRow[] = [];
   let nominalGDP = 3.35;
+  let realGDP = 3.35;
 
   for (let i = 0; i < 54; i++) {
     const year = 2022 + i;
@@ -143,16 +144,15 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
     const nu = getNominalUplift(year);
 
     if (i > 0) {
+      // Real GDP strictly tracks domestic volume growth, anchored to 2022
+      realGDP = realGDP * (1 + domesticRealGrowth);
+
       if (isActual) {
         nominalGDP = ACTUALS[year].nom;
       } else {
         nominalGDP = nominalGDP * (1 + domesticRealGrowth + nu);
       }
     }
-
-    // Real GDP = Nominal / accumulated US price deflator
-    const usDeflator = Math.pow(1 + US_CPI_ANNUAL, year - 2022);
-    const realGDP = nominalGDP / usDeflator;
 
     const perCapitaNom = (nominalGDP * 1e12) / pop;
     const perCapitaReal = (realGDP * 1e12) / pop;
@@ -212,6 +212,7 @@ export const FEATURES: Feature[] = [
   { icon: "◉", title: "Obsidian Dark Interface", desc: "Deep #0A0C10 background layered with gradient glass cards — #1A1F2E at 85% opacity. Every surface breathes with subtle depth through multi-stop radial gradients and micro-shimmer borders. The palette draws from midnight blues, electric teals (#00D4AA), and burnished gold (#FFB547), creating a premium financial-grade aesthetic that commands trust.", tag: "Visual Identity" },
   { icon: "⬡", title: "3D Animated Hero Section", desc: "Above the fold: a full-viewport Three.js particle field where 2,000 luminous points orbit a central India-shaped mesh. GDP growth is encoded as particle density — the further out you look, the richer the trajectory. The Lion Capital floats as a shimmering holographic wireframe, rotating at 0.3°/frame. Scroll depth drives particle dispersion outward.", tag: "Animation" },
   { icon: "▦", title: "Actual vs Projected Split", desc: "A persistent 'ACTUAL ◄ ► PROJECTED' divider at 2026 clearly separates verified IMF/World Bank historical data from model projections. The actual-data region renders with a slightly brighter tint and all HUD cards in the actual zone show a green 'IMF/World Bank Data' badge. This is non-negotiable for credibility.", tag: "Data Integrity" },
+  { icon: "⚠️", title: "The 2025–2026 Exchange Rate Anomaly", desc: "Notice how Nominal USD GDP flattens between 2025–2026 while Real GDP keeps climbing? This explicitly preserves historical accuracy: domestic growth remained strong (~6.5%), but severe INR depreciation against the USD wiped out nominal gains on a global scale. This divergence perfectly illustrates the 'exchange rate drag' to future analysts.", tag: "Historical Context" },
   { icon: "◈", title: "Projection Uncertainty Ribbons", desc: "Each GDP curve is flanked by ±1σ and ±2σ confidence bands rendered as translucent ribbons. Users can toggle Base / Bull (+15%) / Bear (-20%) scenarios. Scenario switching triggers a 600ms Bezier transition across all elements simultaneously. The bear case is calibrated against actual downside risks: INR depreciation acceleration, fiscal slippage, demographic headwinds.", tag: "Statistical Rigor" },
   { icon: "◎", title: "Interactive Timeline Scrubber", desc: "Hovering over the chart shows a pinned HUD card with that year's Real GDP, Nominal GDP, per-capita income, and YoY growth rate. Actual-year cards show source badges. Milestone years pulse gold. All transitions run via spring physics — stiffness 200, damping 20.", tag: "Interactivity" },
   { icon: "⬡", title: "Five Growth Phase Architecture", desc: "Actual (2022–2026), Acceleration (2027–2035, ~7%), Maturation (2036–2045, ~6%), Normalization (2046–2060, ~5%), and Steady State (2061–2075, ~3–4%). Each phase has a distinct canvas tint, small-caps label, and an info panel explaining the structural drivers of that era's growth.", tag: "Data Structure" },
