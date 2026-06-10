@@ -27,6 +27,7 @@ function App() {
   const [activeState, setActiveState] = useState<StateId>('INDIA');
   const [budgetState, setBudgetState] = useState<StateId>('INDIA');
   const [budgetYear, setBudgetYear] = useState<number>(2026);
+  const [budgetNominal, setBudgetNominal] = useState(true);
 
   const activeData = useMemo(() => generateStateData(activeState, scenario), [scenario, activeState]);
   const activeMilestones = useMemo(() => generateStateSpecificMilestones(activeData, activeState), [activeData, activeState]);
@@ -51,7 +52,7 @@ function App() {
   
   const budgetDataRaw = useMemo(() => generateStateData(budgetState, scenario), [scenario, budgetState]);
   const budgetRow = budgetDataRaw.find((d) => d.year === budgetYear) || budgetDataRaw[0];
-  const budgetData = useMemo(() => generateBudgetData(budgetRow, budgetState), [budgetRow, budgetState]);
+  const budgetData = useMemo(() => generateBudgetData(budgetRow, budgetState, budgetNominal), [budgetRow, budgetState, budgetNominal]);
 
   const yearFilters = useMemo(() => [
     { start: 2022, end: 2030, label: '2022–30' },
@@ -446,6 +447,24 @@ function App() {
                   </select>
                 </div>
 
+                <div className="budget-control-group">
+                  <label>Value Base</label>
+                  <div className="chart-toggle-group" style={{ marginTop: '8px' }}>
+                    <button
+                      className={`chart-toggle-btn ${!budgetNominal ? 'active-teal' : ''}`}
+                      onClick={() => setBudgetNominal(false)}
+                    >
+                      Real USD (2022)
+                    </button>
+                    <button
+                      className={`chart-toggle-btn ${budgetNominal ? 'active-gold' : ''}`}
+                      onClick={() => setBudgetNominal(true)}
+                    >
+                      Nominal USD
+                    </button>
+                  </div>
+                </div>
+
                 <div className="budget-control-group slider-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>Timeline Year: <span style={{ color: PALETTE.gold, fontWeight: 700 }}>{budgetYear}</span></label>
@@ -471,7 +490,7 @@ function App() {
               <div className="budget-hero-bg"></div>
               <div className="budget-hero-content">
                 <div className="budget-hero-subtitle">
-                  Projected {budgetData.year} {STATE_INFO[budgetState].name} Budget
+                  Projected {budgetData.year} {STATE_INFO[budgetState].name} Budget ({budgetNominal ? 'Nominal USD' : 'Real 2022 USD'})
                 </div>
                 <div className="budget-hero-title">
                   <span className="currency">$</span>
@@ -479,7 +498,7 @@ function App() {
                   <span className="suffix">Billion</span>
                 </div>
                 <div className="budget-hero-desc">
-                  Based on estimated expenditure at <strong style={{color: PALETTE.gold}}>{(budgetData.budgetRatio * 100).toFixed(1)}%</strong> of Projected Nominal GDP (${budgetRow.nominalGDP.toFixed(2)}T). 
+                  Based on estimated expenditure at <strong style={{color: PALETTE.gold}}>{(budgetData.budgetRatio * 100).toFixed(1)}%</strong> of Projected {budgetNominal ? 'Nominal' : 'Real'} GDP (${(budgetNominal ? budgetRow.nominalGDP : budgetRow.realGDP).toFixed(2)}T). 
                   {budgetState === 'INDIA' 
                     ? ' The National Budget is heavily weighted towards Defense, Infrastructure, and Transfers to States.' 
                     : ' State Budgets are heavily weighted towards local Education, Health, Police, and Rural Development.'}

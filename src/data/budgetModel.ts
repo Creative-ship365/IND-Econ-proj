@@ -38,12 +38,13 @@ const STATE_SECTORS: BudgetSector[] = [
   { name: 'Others', percentage: 0.24, color: '#D5DBDB' },
 ];
 
-export function generateBudgetData(row: GdpRow, stateId: StateId): BudgetData {
+export function generateBudgetData(row: GdpRow, stateId: StateId, isNominal: boolean = true): BudgetData {
   const isNational = stateId === 'INDIA';
   const budgetRatio = isNational ? 0.15 : 0.17; // Assume 15% for National, 17% for States
   const sectorsDef = isNational ? NATIONAL_SECTORS : STATE_SECTORS;
   
-  const totalBudgetUSD = row.nominalGDP * budgetRatio;
+  const gdpBase = isNominal ? row.nominalGDP : row.realGDP;
+  const totalBudgetUSD = gdpBase * budgetRatio;
   
   const sectors = sectorsDef.map(sector => ({
     sector,
