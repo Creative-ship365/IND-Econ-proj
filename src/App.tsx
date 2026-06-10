@@ -9,6 +9,7 @@ import {
   type Scenario,
 } from './data/model';
 import { type StateId, STATE_INFO, generateStateData, generateStateSpecificMilestones } from './data/stateModel';
+import { generateBudgetData } from './data/budgetModel';
 import { useAnimVal } from './hooks/useAnimVal';
 import GdpChart from './components/GdpChart';
 import MiniSparkline from './components/MiniSparkline';
@@ -45,6 +46,8 @@ function App() {
   const animNom = useAnimVal(nom2075, 2000, started);
 
   const scrubD = activeData.find((d) => d.year === scrubYear) || activeData[0];
+  const budgetData = useMemo(() => generateBudgetData(scrubD, activeState), [scrubD, activeState]);
+
   const yearFilters = useMemo(() => [
     { start: 2022, end: 2030, label: '2022–30' },
     { start: 2031, end: 2040, label: '31–40' },
@@ -399,6 +402,59 @@ function App() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ BUDGET TAB ═══════════ */}
+        {activeTab === 'budget' && (
+          <div className={`tab-content ${cardsVisible ? 'visible' : ''}`}>
+            <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Estimated {budgetData.year} {STATE_INFO[activeState].name} Budget
+              </div>
+              <div style={{ fontSize: '48px', fontWeight: 800, color: PALETTE.gold, letterSpacing: '-0.02em', marginBottom: '12px' }}>
+                ${(budgetData.totalBudgetUSD * 1000).toFixed(1)} Billion
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', maxWidth: '600px', margin: '0 auto' }}>
+                Estimated at {(budgetData.budgetRatio * 100).toFixed(1)}% of Nominal GDP (${scrubD.nominalGDP.toFixed(2)}T). 
+                {activeState === 'INDIA' 
+                  ? ' The Union Budget traditionally focuses on Defense, Infrastructure, and Transfers to States.' 
+                  : ' State Budgets primarily focus on Education, Health, Police, and local Infrastructure.'}
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-label">Sector Allocation Breakdown ({budgetData.year})</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
+                {budgetData.sectors.map((s, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: s.sector.color }} />
+                        <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{s.sector.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '16px' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>{(s.sector.percentage * 100).toFixed(1)}%</span>
+                        <span style={{ color: s.sector.color, fontWeight: 700, width: '80px', textAlign: 'right' }}>
+                          ${(s.amountUSD * 1000).toFixed(1)}B
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div 
+                        style={{ 
+                          height: '100%', 
+                          background: s.sector.color, 
+                          width: `${s.sector.percentage * 100}%`,
+                          borderRadius: '3px',
+                          transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
+                        }} 
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

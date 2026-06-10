@@ -253,6 +253,7 @@ export const PALETTE = {
 
 export const TABS = [
   { id: "overview", label: "Overview" },
+  { id: "budget", label: "Budget & Sectors" },
   { id: "data", label: "Data & Charts" },
   { id: "assumptions", label: "Assumptions" },
   { id: "features", label: "Features" },
