@@ -36,8 +36,10 @@ export interface GdpRow {
   year: number;
   realGDP: number;
   nominalGDP: number;
+  pppGDP: number;
   perCapita: number;
   perCapitaReal: number;
+  perCapitaPPP: number;
   yoyGrowth: number;
   nominalUplift: number;
   pop: number;
@@ -118,6 +120,9 @@ function getNominalUplift(year: number): number {
 
 
 
+// ─── US CPI deflator (Fed long-run target, used to derive constant 2022 USD) ───
+const US_CPI_ANNUAL = 0.025;
+
 // ─── Actual historical data ───
 const ACTUALS: Record<number, { nom: number; realGrowth: number }> = {
   2022: { nom: 3.35, realGrowth: 0.072 },
@@ -135,6 +140,7 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
   const rows: GdpRow[] = [];
   let nominalGDP = 3.35;
   let realGDP = 3.35;
+  let pppGDP = 11.9; // 2022 base PPP for India
 
   for (let i = 0; i < 54; i++) {
     const year = 2022 + i;
@@ -146,6 +152,8 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
     if (i > 0) {
       // Real GDP strictly tracks domestic volume growth, anchored to 2022
       realGDP = realGDP * (1 + domesticRealGrowth);
+      // PPP GDP grows by real growth plus US inflation
+      pppGDP = pppGDP * (1 + domesticRealGrowth + US_CPI_ANNUAL);
 
       if (isActual) {
         nominalGDP = ACTUALS[year].nom;
@@ -156,13 +164,16 @@ export function generateGdpData(scenario: Scenario): GdpRow[] {
 
     const perCapitaNom = (nominalGDP * 1e12) / pop;
     const perCapitaReal = (realGDP * 1e12) / pop;
+    const perCapitaPPP = (pppGDP * 1e12) / pop;
 
     rows.push({
       year,
       realGDP: Math.round(realGDP * 100) / 100,
       nominalGDP: Math.round(nominalGDP * 100) / 100,
+      pppGDP: Math.round(pppGDP * 100) / 100,
       perCapita: Math.round(perCapitaNom / 10) * 10,
       perCapitaReal: Math.round(perCapitaReal / 10) * 10,
+      perCapitaPPP: Math.round(perCapitaPPP / 10) * 10,
       yoyGrowth: Math.round(domesticRealGrowth * 1000) / 10, // India domestic real growth
       nominalUplift: Math.round(nu * 1000) / 10,
       pop: Math.round(pop / 1e6),

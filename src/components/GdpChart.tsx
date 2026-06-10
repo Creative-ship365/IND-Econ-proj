@@ -91,6 +91,7 @@ const GdpChart: React.FC<GdpChartProps> = ({
     },
     { text: `Real: $${sd.realGDP.toFixed(2)}T`, color: PALETTE.teal, bold: false },
     { text: `Nominal: $${sd.nominalGDP.toFixed(2)}T`, color: PALETTE.gold, bold: false },
+    { text: `PPP: $${sd.pppGDP.toFixed(2)}T`, color: PALETTE.purple, bold: false },
     { text: `Growth: ${sd.yoyGrowth}% real`, color: 'rgba(255,255,255,0.6)', bold: false },
     {
       text: `Per capita: $${sd.perCapita.toLocaleString()}`,

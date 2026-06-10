@@ -25,6 +25,7 @@ export function generateStateData(stateId: StateId, scenario: Scenario): GdpRow[
     
     const nominalGDP = d.nominalGDP * stateShare;
     const realGDP = d.realGDP * stateShare;
+    const pppGDP = d.pppGDP * stateShare;
 
     // State population model
     let pop = state.popBase2022 * 1e6;
@@ -43,6 +44,7 @@ export function generateStateData(stateId: StateId, scenario: Scenario): GdpRow[
 
     const perCapitaNom = (nominalGDP * 1e12) / pop;
     const perCapitaReal = (realGDP * 1e12) / pop;
+    const perCapitaPPP = (pppGDP * 1e12) / pop;
 
     const yoyGrowth = d.yoyGrowth + (state.growthModifier * 100 * Math.exp(-yearsFromBase / 20));
 
@@ -50,8 +52,10 @@ export function generateStateData(stateId: StateId, scenario: Scenario): GdpRow[
       ...d,
       nominalGDP: Math.round(nominalGDP * 1000) / 1000,
       realGDP: Math.round(realGDP * 1000) / 1000,
+      pppGDP: Math.round(pppGDP * 1000) / 1000,
       perCapita: Math.round(perCapitaNom / 10) * 10,
       perCapitaReal: Math.round(perCapitaReal / 10) * 10,
+      perCapitaPPP: Math.round(perCapitaPPP / 10) * 10,
       pop: Math.round(pop / 1e6),
       yoyGrowth: Math.round(yoyGrowth * 10) / 10,
     };

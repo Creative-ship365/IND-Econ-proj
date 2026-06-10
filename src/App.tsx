@@ -111,8 +111,18 @@ function App() {
       c: PALETTE.gold,
     },
     {
+      label: 'PPP GDP',
+      value: `$${scrubD.pppGDP.toFixed(2)}T`,
+      c: PALETTE.purple,
+    },
+    {
       label: 'Per-Capita (nom)',
       value: `$${scrubD.perCapita.toLocaleString()}`,
+      c: 'rgba(255,255,255,0.7)',
+    },
+    {
+      label: 'Per-Capita (PPP)',
+      value: `$${scrubD.perCapitaPPP.toLocaleString()}`,
       c: 'rgba(255,255,255,0.7)',
     },
     {
@@ -167,8 +177,10 @@ function App() {
     'Year',
     'Real GDP ($T)',
     'Nominal GDP ($T)',
+    'PPP GDP ($T)',
     'Per-Capita ($)',
     'Real/Capita ($)',
+    'PPP/Capita ($)',
     'Real Growth',
     'Pop (M)',
   ];
@@ -625,11 +637,17 @@ function App() {
                           >
                             ${d.nominalGDP.toFixed(2)}
                           </td>
+                          <td style={{ color: PALETTE.purple }}>
+                            ${d.pppGDP.toFixed(2)}
+                          </td>
                           <td style={{ color: 'rgba(255,255,255,0.6)' }}>
                             ${d.perCapita.toLocaleString()}
                           </td>
                           <td style={{ color: 'rgba(255,255,255,0.5)' }}>
                             ${d.perCapitaReal.toLocaleString()}
+                          </td>
+                          <td style={{ color: 'rgba(255,255,255,0.5)' }}>
+                            ${d.perCapitaPPP.toLocaleString()}
                           </td>
                           <td
                             style={{
